@@ -189,7 +189,7 @@ class AddressParser(object):
                     solution.append(temp) # comment we append the address to the solution
 
           #      print solution
-            elif (arcs[i].relation == 'ATT' and postags[i] not in ['p', 'r', 'q'] and words[i] not in ['大杯','超大杯','小杯']) or postags[i] in ['ns', 'ni', 'nl']: # comment generate an phrase via "ATT" relation but modify a little bit
+            elif (arcs[i].relation == 'ATT' and postags[i] not in ['p', 'r', 'q'] and words[i] not in ['大杯','超大杯','小杯', '中杯', '杯']) or postags[i] in ['ns', 'ni', 'nl']: # comment generate an phrase via "ATT" relation but modify a little bit
                 temp.append(i)
                 #print temp
             elif temp != [] and (words[i] in address or self.word_in(words[i],word_address)): # comment consider the words in token_address_weak
@@ -243,7 +243,7 @@ if __name__ == '__main__':
 
     end = time()
 
-    sentence = 'Boss，今天是您和小来在一起的第6天，第5天签到，您已经连续签到1天，每连续签到7天会有意外惊喜'
+    sentence = '大杯馥芮白 脱脂奶'
     solution = address_parser(sentence)
 
     end1 = time()
