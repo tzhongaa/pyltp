@@ -223,7 +223,7 @@ class AddressParser(object):
                         del temp[0]
                         #print temp
                     for idx1 in temp:
-                        if postags[idx1] in ['ns', 'ni', 'nl'] or words[idx1] in address2 or self.word_in(words[idx1], word2_address):# comment we check whether the phrase is one sentence
+                        if postags[idx1] in ['ns', 'ni'] or words[idx1] in address2 or self.word_in(words[idx1], word2_address):# comment we check whether the phrase is one sentence
                             temp_solution.append(temp)
                             break
                     break
@@ -243,7 +243,7 @@ if __name__ == '__main__':
 
     end = time()
 
-    sentence = '送到香港科技大学2楼cy3007怎么样'
+    sentence = 'Boss，今天是您和小来在一起的第6天，第5天签到，您已经连续签到1天，每连续签到7天会有意外惊喜'
     solution = address_parser(sentence)
 
     end1 = time()
