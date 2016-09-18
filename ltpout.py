@@ -35,23 +35,23 @@ class AddressParser(object):
         """
         from pyltp import Segmentor
         segmentor = Segmentor()  # 初始化实例
-        segmentor.load_with_lexicon('ltp_models/cws.model','segmentor.txt')  # 加载模型
+        segmentor.load_with_lexicon(csw_model,csw_dictionary)  # 加载模型
         from pyltp import Postagger
         postagger = Postagger() # 初始化实例
-        postagger.load_with_lexicon('ltp_models/pos.model','postagger.txt')  # 加载模型
+        postagger.load_with_lexicon(pos_model,pos_dictionary)  # 加载模型
         from pyltp import Parser
         parser = Parser() # 初始化实例
-        parser.load('ltp_models/parser.model')  # 加载模型
+        parser.load(parse_model)  # 加载模型
 
         import re
         regex = re.compile('\s*,\s*')
-        with open('token_address.txt','r') as fp:
+        with open(token_address,'r') as fp:
             token1_address = regex.split(fp.readline().strip('\n'))   
             token2_address = regex.split(fp.readline().strip('\n'))
-        with open('token_address_weak.txt', 'r') as fp:
+        with open(token_address_weak, 'r') as fp:
             token1_address_weak = regex.split(fp.readline().strip('\n'))   
             token2_address_weak = regex.split(fp.readline().strip('\n'))
-        with open('token_address_remove.txt', 'r') as fp:
+        with open(token_address_remove, 'r') as fp:
             token_address_remove = regex.split(fp.readline().strip('\n'))   
 
         self.segmentor = segmentor
