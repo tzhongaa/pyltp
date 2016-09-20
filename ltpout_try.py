@@ -15,15 +15,15 @@ def model_load(csw_model='ltp_models/cws.model', csw_dictionary='segmentor.txt',
 
 def parse_sentence(segmentor, postagger, parser, sentence='北京市望京soho'):
     words = segmentor.segment(sentence)  # 分词
-   # print '\t'.join(words)
+#    print '\t'.join(words)
     #segmentor.release()  # 释放模型
     postags = postagger.postag(words)  # 词性标注
-   # print '\t'.join(postags)
+#    print '\t'.join(postags)
     #postagger.release()  # 释放模型
     arcs = parser.parse(words, postags)  # 句法分析
    # print "\t".join("%d:%s" % (arc.head, arc.relation) for arc in arcs)
     #parser.release()  # 释放模型
-   # print [x.relation for x in arcs]
+#    print [x.relation for x in arcs]
 
     return words, postags, arcs
 
@@ -120,7 +120,85 @@ def address_extract(words, postags, arcs):
 
 
 
+def word_fix(word):
+    if '热' in word or '杯' in word or '冰' in word or '大' in word or '冷' in word or '中' in word or  '小' in word:
+        new_word = word.decode('utf-8')
+        left = 0
+        right = len(new_word)
+        for i in range(len(new_word)):
+            if new_word[i].encode('utf-8') in ['热', '杯', '冰', '冷', '超', '大', '中','小'] and i == left:
+                left = i+1
+            elif new_word[i].encode('utf-8') in ['热', '杯', '冰', '冷', '超','大', '中', '小']:
+                right = i
+        word = new_word[left:right].encode('utf-8')
+    return word
 
+
+def food_extract(words, postags, arcs):
+    import re
+    regex = re.compile('\s*,\s*')
+    with open('food_end.txt','r') as fp:
+        food_end = regex.split(fp.readline().strip('\n'))   
+    temp = []
+    solution = []
+    for i in range(len(arcs)):
+        if i < len(arcs) - 1 and words[i+1] in ['订单']:
+            temp = []
+        elif words[i] in food_end or word_fix(words[i]) in food_end:
+            temp.append(i)
+            if i < len(arcs) -1 and words[i+1] in food_end:
+                continue
+            solution.append(temp)
+            temp = []
+        elif i < len(arcs) - 1 and words[i] in ['flat', 'Flat'] and words[i+1] in ['white', 'White']:
+            temp.append(i)
+            temp.append(i+1)
+            if i < len(arcs) - 2 and words[i+2] in food_end:
+                continue
+            solution.append(temp)
+            temp = []
+        elif (arcs[i].relation == 'ATT' and postags[i] not in ['m', 'p', 'r', 'q'] and words[i] not in ['大杯','超大杯','小杯','杯','中杯', '星巴克', 'Tall', 'Grande', 'Venti', 'grand', 'venti']):
+            temp.append(i)
+        else:
+            temp = []
+
+    temp_solution = []
+    for temp in solution:
+        if len(temp_solution) >= 1 and (temp[0] - temp_solution[-1][-1] == 1):
+            last_temp = temp_solution.pop()
+            last_temp.extend(temp)
+            temp = last_temp
+        temp_solution.append(temp)
+
+    final_solution = []
+    for temp in temp_solution:
+        while words[temp[0]].decode('utf-8')[0].encode('utf-8') in ['超','杯', '冷', '热', '冰', '大', '中','小'] and words[temp[0]] not in food_end:
+            if len(temp) >=2 and words[temp[0]] in ['热'] and words[temp[1]] in ['巧克力']:
+                break
+            if words[temp[0]] in ['冰摇']:
+                break
+            words[temp[0]] = words[temp[0]].decode('utf-8')[1:].encode('utf-8')
+            if not words[temp[0]]:
+                temp = temp[1:]
+
+        while words[temp[-1]].decode('utf-8')[-1].encode('utf-8') in ['超','热', '杯', '冰', '冷','中','小','大'] and words[temp[-1]] not in food_end:
+            words[temp[-1]] = words[temp[-1]].decode('utf-8')[:-1].encode('utf-8')
+            if not words[temp[-1]]:
+                temp = temp[:-1]
+        if len(temp) == 1 and words[temp[0]] in ['咖啡']:
+            continue
+        string = ''
+        for i in temp:
+            if words[i] in ['white', 'White']:
+                string = string + ' '+words[i]
+            else:
+                string = string + words[i]
+  #      final_solution.append(''.join(words[i] for i in temp))
+        final_solution.append(string)
+
+    return final_solution
+
+ 
 
 
 
@@ -130,13 +208,14 @@ if __name__ == '__main__':
     #import chardet
     segmentor, postagger, parser = model_load()
     end = time()
-    sentence = '国务院总理李克强调研上海外高桥时提出，支持上海积极探索新机制'
+    sentence = '大杯冰美式4个奶球，4包棕糖'
     words, postags, arcs  = parse_sentence(segmentor, postagger, parser, sentence)
     end1 = time()
-    solution = address_extract(words, postags, arcs)
+    solution = food_extract(words, postags, arcs)
     end2 = time()
     for temp in solution:
         print(temp)
+
       
     print(end-start)
     print(end1-end)
