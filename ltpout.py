@@ -97,6 +97,8 @@ class AddressParser(object):
             postags: pos
             arcs: syntax tree
         """
+        self.sentence = sentence
+
         words = segmentor.segment(sentence)  # 分词
         #print '\t'.join(words)
         #segmentor.release()  # 释放模型
@@ -227,11 +229,39 @@ class AddressParser(object):
                             temp_solution.append(temp)
                             break
                     break
-        #print temp_solution           
-        final_solution = []
-        for temp in temp_solution:
-            final_solution.append(''.join(words[i] for i in temp))# comment we transfer the temp(a list) to a string contains address information
+        #print temp_solution          
+        count = 0
+        mini_count = 1
+        new_word = []
+        new_word_list = []
+        for single_word in self.sentence.decode('utf-8'):
+#            print single_word
+            new_word.append(single_word.encode('utf-8'))
+            if single_word in [' '.decode('utf-8'), '　'.decode('utf-8')]:
+                pass
+            elif mini_count < len(words[count].decode('utf-8')):
+                mini_count += 1
+            else:
+                mini_count = 1
+                count += 1
+                new_word_list.append(''.join(word for word in new_word))
+                new_word = []
 
+
+#        for temp in new_word_list:
+#            print temp
+      
+
+
+        
+        final_solution = []
+#        for temp in temp_solution:
+##            print temp
+#            final_solution.append(''.join(words[i] for i in temp))# comment we transfer the temp(a list) to a string contains address information
+
+        for temp in temp_solution:
+#            print temp
+            final_solution.append((''.join(new_word_list[i] for i in temp)).strip())# comment we transfer the temp(a list) to a string contains address information
         return final_solution
 
 
@@ -243,7 +273,7 @@ if __name__ == '__main__':
 
     end = time()
 
-    sentence = '大杯馥芮白 脱脂奶'
+    sentence = '送到 深南 大道 101 号哈哈'
     solution = address_parser(sentence)
 
     end1 = time()
