@@ -120,46 +120,65 @@ def address_extract(words, postags, arcs):
 
 
 
-def word_fix(word):
-    if '热' in word or '杯' in word or '冰' in word or '大' in word or '冷' in word or '中' in word or  '小' in word:
+def word_fix(word, drink_confuse):
+    flag = False
+    for temp in drink_confuse:
+        if temp in word:
+            flag = True
+            break
+    if flag:
         new_word = word.decode('utf-8')
         left = 0
         right = len(new_word)
         for i in range(len(new_word)):
-            if new_word[i].encode('utf-8') in ['热', '杯', '冰', '冷', '超', '大', '中','小'] and i == left:
+            if new_word[i].encode('utf-8') in drink_confuse and i == left:
                 left = i+1
-            elif new_word[i].encode('utf-8') in ['热', '杯', '冰', '冷', '超','大', '中', '小']:
+            elif new_word[i].encode('utf-8') in drink_confuse:
                 right = i
         word = new_word[left:right].encode('utf-8')
     return word
 
+def drink_from_dictionary(sentence):
+    with open('drink_dictionary.txt','r') as fp:
+        drink_dictionary = regex.split(fp.readline().strip('\n'))   
+    for temp in drink_dictionary:
+        if temp in sentence:
+            return [temp]
+    return []
 
-def food_extract(words, postags, arcs):
+
+def drink_extract(words, postags, arcs):
     import re
     regex = re.compile('\s*,\s*')
-    with open('food_end.txt','r') as fp:
-        food_end = regex.split(fp.readline().strip('\n'))   
-    with open('food_remove.txt','r') as fp:
-        food_remove = regex.split(fp.readline().strip('\n'))   
+    with open('drink_end.txt','r') as fp:
+        drink_end = regex.split(fp.readline().strip('\n'))   
+    with open('drink_remove.txt','r') as fp:
+        drink_remove = regex.split(fp.readline().strip('\n'))   
+    with open('drink_confuse.txt','r') as fp:
+        drink_confuse = regex.split(fp.readline().strip('\n'))
+    for temp in drink_remove:
+        print temp
+ 
     temp = []
     solution = []
     for i in range(len(arcs)):
-        if words[i] in food_remove:
-            temp = []
-        elif words[i] in food_end or word_fix(words[i]) in food_end:
+ #       if words[i] in drink_remove:
+  #          temp = []
+        if words[i] in drink_end or word_fix(words[i], drink_confuse) in drink_end:
             temp.append(i)
-            if i < len(arcs) -1 and words[i+1] in food_end:
+            if i < len(arcs) -1 and words[i+1] in drink_end:
                 continue
             solution.append(temp)
             temp = []
         elif i < len(arcs) - 1 and words[i] in ['flat', 'Flat', 'FLAT'] and words[i+1] in ['white', 'White', 'WHITE']:
             temp.append(i)
             temp.append(i+1)
-            if i < len(arcs) - 2 and words[i+2] in food_end:
+            if i < len(arcs) - 2 and words[i+2] in drink_end:
                 continue
             solution.append(temp)
             temp = []
-        elif (arcs[i].relation == 'ATT' and postags[i] not in ['m', 'p', 'r', 'q', 'e', 'ws'] and words[i] not in ['大杯','超大杯','小杯','杯','中杯', '星巴克', 'Tall', 'Grande', 'Venti', 'grand', 'venti', 'grande']):
+        elif arcs[i].relation == 'ATT' and postags[i] not in ['m', 'p', 'r', 'q', 'e', 'ws'] and words[i] not in drink_remove:
+            print('yes')
             temp.append(i)
         else:
             temp = []
@@ -174,7 +193,8 @@ def food_extract(words, postags, arcs):
 
     final_solution = []
     for temp in temp_solution:
-        while words[temp[0]].decode('utf-8')[0].encode('utf-8') in ['超','杯', '冷', '热', '冰', '大', '中','小','嗯'] and words[temp[0]] not in food_end:
+
+        while words[temp[0]].decode('utf-8')[0].encode('utf-8') in drink_confuse and words[temp[0]] not in drink_end:
             if len(temp) >=2 and words[temp[0]] in ['热'] and words[temp[1]] in ['巧克力']:
                 break
             if words[temp[0]] in ['冰摇', '冰搖']:
@@ -183,7 +203,7 @@ def food_extract(words, postags, arcs):
             if not words[temp[0]]:
                 temp = temp[1:]
 
-        while words[temp[-1]].decode('utf-8')[-1].encode('utf-8') in ['超','热', '杯', '冰', '冷','中','小','大'] and words[temp[-1]] not in food_end:
+        while words[temp[-1]].decode('utf-8')[-1].encode('utf-8') in drink_confuse and words[temp[-1]] not in drink_end:
             words[temp[-1]] = words[temp[-1]].decode('utf-8')[:-1].encode('utf-8')
             if not words[temp[-1]]:
                 temp = temp[:-1]
@@ -198,9 +218,11 @@ def food_extract(words, postags, arcs):
         final_solution.append(''.join(words[i] for i in temp))
 #        final_solution.append(string)
 
+            
+
     return final_solution
 
- 
+
 
 
 
@@ -210,10 +232,10 @@ if __name__ == '__main__':
     #import chardet
     segmentor, postagger, parser = model_load()
     end = time()
-    sentence = '嗯 摩卡星冰乐大杯'
+    sentence = '星巴克热卡布奇诺大杯'
     words, postags, arcs  = parse_sentence(segmentor, postagger, parser, sentence)
     end1 = time()
-    solution = food_extract(words, postags, arcs)
+    solution = drink_extract(words, postags, arcs)
     end2 = time()
     for temp in solution:
         print(temp)
