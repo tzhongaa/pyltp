@@ -38,9 +38,10 @@ postagger.txt:
 token_address_weak.txt
 -------------
     Words that seems to indicates an sentence contains the address information
-    Should contains two lines. 
+    Should contains three lines. 
     The first line contains the Chinese words that can be splited into several words.
     The second line contains the Chinese words that can not be splited
+    The third line contains some word that might be address information
     
 token_address.txt
 ------------
