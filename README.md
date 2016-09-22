@@ -1,17 +1,26 @@
 Please run "pip install -r requirements.txt"
 
+Please pay attention to "Byte Order Mark" problem of txt file(encoding problem for Chinese). Try use ":set bomb?" command in the vim to check if there is "BOM" in the top of the file. Please refer to http://huoding.com/2011/05/14/78 for the details
+
 
 ltpout.py:
 --------------
     main python file to run the code to extract the address information
     As to load module, please refer to __init__ 
-    As to get an address from one sentence, please refer to __call__
+    As to get an address from one sentence, please refer to get_address
+    As to get the drink from one sentence, please refer to get_drink
     Please refer to the main function of ltpout.py for an example
 
 ltpout_try.py:
 --------------
     The code will be deleted in the future. 
     It is the first version of main python file to run the code to extract the address information
+
+ltpout_final_try.py:
+--------------
+    The code will be deleted in the future. 
+    It is a last version of main python file to run the code to extract the address and drink information
+
 
 accuracy.ipynb:
 --------------
@@ -42,6 +51,23 @@ token_address.txt
 token_address_remove.txt
 -------------
     Words that are not address information but includes words in token_address_weak.txt
+
+drink_end.txt
+-------------
+    Words that the drink with ends with
+
+drink_dictionary.txt
+-------------
+    Drink from the file "sku_id.txt"
+
+drink_remove.txt
+-------------
+    Words not considered as drink information
+
+drink_confuse.txt
+-------------
+    Words that might attachs the drink information, we need to remove them sometimes. 
+    The problem is from word segmentation from LTP
 
 exception.txt:
 -------------

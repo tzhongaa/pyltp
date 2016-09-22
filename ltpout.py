@@ -1,5 +1,5 @@
 # coding: utf-8
-class AddressParser(object):
+class AddressDrinkParser(object):
     """It is used to extract address information from one sentence
     Please refer to LTP(http://www.ltp-cloud.com/intro/) for reference. We first generate one phrase from a sentence via "ATT" in Dependency Parsing. Then we check whether there is address information. If it is, we decide that the phrase contains address information. After that, we do some pattern based modifications to the phrase. 
     As for the trained model, please download from https://pan.baidu.com/share/link?shareid=1988562907&uk=2738088569. Besides, please install pyltp, which is the python interface of LTP.
@@ -17,7 +17,7 @@ class AddressParser(object):
         token_address_remove: A list. To remove the word that is not address information but contains words in token_address_week. Please refer to the file toaken_address_remove.txt       
     """
 
-    def __init__(self, csw_model='ltp_models/cws.model', csw_dictionary='segmentor.txt', pos_model='ltp_models/pos.model', pos_dictionary='postagger.txt',parse_model='ltp_models/parser.model', token_address='token_address.txt', token_address_weak='token_address_weak.txt', token_address_remove='token_address_remove.txt'):
+    def __init__(self, csw_model='ltp_models/cws.model', csw_dictionary='segmentor.txt', pos_model='ltp_models/pos.model', pos_dictionary='postagger.txt',parse_model='ltp_models/parser.model', token_address='token_address.txt', token_address_weak='token_address_weak.txt', token_address_remove='token_address_remove.txt', drink_dictionary='drink_dictionary.txt', drink_end='drink_end.txt', drink_remove='drink_remove.txt', drink_confuse='drink_confuse.txt'):
         """
         load the modeles
 
@@ -31,6 +31,10 @@ class AddressParser(object):
             token_address: words that indicates that a phrase contains an address. It should be a subset of token_address_weak
             token_address_weak: words tha indicates that a phrase contains an address weakly. 
             token_address_remove: words that are not address information but contains words in token_address_weak
+            drink_dictionary: drink from the file "sku_id.txt"
+            drink_end = drink_end: the word that the drink might end with
+            drink_remove = drink_remove: the word that does not belong to drink
+            drink_confuse = drink_confuse: the word that might attach to the word in drink( due to the problem of segmentation of LTP)
 
         """
         from pyltp import Segmentor
@@ -63,7 +67,25 @@ class AddressParser(object):
         self.token2_address_weak = token2_address_weak
         self.token_address_remove = token_address_remove
 
-    def __call__(self, sentence):
+        
+        with open(drink_dictionary,'r') as fp:
+            drink_dictionary = regex.split(fp.readline().strip('\n'))
+        with open(drink_end,'r') as fp:
+            drink_end = regex.split(fp.readline().strip('\n'))   
+        with open(drink_remove,'r') as fp:
+            drink_remove = regex.split(fp.readline().strip('\n'))   
+        with open(drink_confuse,'r') as fp:
+            drink_confuse = regex.split(fp.readline().strip('\n'))
+
+
+        self.drink_dictionary = drink_dictionary
+        self.drink_end = drink_end
+        self.drink_remove = drink_remove
+        self.drink_confuse = drink_confuse
+
+ 
+
+    def get_address(self, sentence):
         """
         To generate address information from one sentence
 
@@ -79,6 +101,21 @@ class AddressParser(object):
         words, postags, arcs = self.parse_sentence(self.segmentor, self.postagger, self.parser, sentence)
         return self.address_extract(words, postags, arcs)
 
+    def get_drink(self, sentence):
+        """
+        To generate drink information from one sentence
+
+        Args:
+        ------------
+            sentence: One Chinese sentence, should be a string
+
+        Returns:
+        ------------
+            A list: It contains a list of strings. Each string is a drink
+
+        """
+        words, postags, arcs = self.parse_sentence(self.segmentor, self.postagger, self.parser, sentence)
+        return self.drink_extract(words, postags, arcs)
 
     def parse_sentence(self, segmentor, postagger, parser, sentence='北京市望京soho'):
         """
@@ -97,16 +134,19 @@ class AddressParser(object):
             postags: pos
             arcs: syntax tree
         """
+        original_words = segmentor.segment(sentence)  # 分词
+        self.original_words = original_words
+        
         self.sentence = sentence
 
         words = segmentor.segment(sentence)  # 分词
-        #print '\t'.join(words)
+#        print '\t'.join(words)
         #segmentor.release()  # 释放模型
         postags = postagger.postag(words)  # 词性标注
-        #print '\t'.join(postags)
+#        print '\t'.join(postags)
         #postagger.release()  # 释放模型
         arcs = parser.parse(words, postags)  # 句法分析
-        #print "\t".join("%d:%s" % (arc.head, arc.relation) for arc in arcs)
+#        print "\t".join("%d:%s" % (arc.head, arc.relation) for arc in arcs)
         #parser.release()  # 释放模型
         #print [x.relation for x in arcs]
 
@@ -246,18 +286,8 @@ class AddressParser(object):
                 count += 1
                 new_word_list.append(''.join(word for word in new_word))
                 new_word = []
-
-
-#        for temp in new_word_list:
-#            print temp
-      
-
-
         
         final_solution = []
-#        for temp in temp_solution:
-##            print temp
-#            final_solution.append(''.join(words[i] for i in temp))# comment we transfer the temp(a list) to a string contains address information
 
         for temp in temp_solution:
 #            print temp
@@ -265,21 +295,178 @@ class AddressParser(object):
         return final_solution
 
 
+    def word_fix(self, word, drink_confuse):
+        """
+        Some words in drink_confuse might attach to the words in drink, due to the problem of segmentation of LTP
+
+        Args:
+        -------------
+            word: The input word that contains drink information
+            drink_confuse: Please refer to "drink_confuse.txt"
+
+        Returns:
+        ------------
+            Mofified word that remove the word in drink_confuse
+        """
+        flag = False
+        for temp in drink_confuse:
+            if temp in word:
+                flag = True
+                break
+        if flag:
+            new_word = word.decode('utf-8')
+            left = 0
+            right = len(new_word)
+            for i in range(len(new_word)):
+                if new_word[i].encode('utf-8') in drink_confuse and i == left:
+                    left = i+1
+                elif new_word[i].encode('utf-8') in drink_confuse:
+                    right = i
+            word = new_word[left:right].encode('utf-8')
+        return word
+
+    def drink_from_dictionary(self, sentence):
+        """
+        The the syntax tree fails to extract the drink, we might the string match method to extract the drink information. Please refer to "drink_dictionary.txt"
+
+        Args:
+        -----------
+            sentence: A string. The sentence we want to process
+
+        Returns:
+        ----------
+            A list: Contains the drink from drink_dictionary
+        """
+        drink_dictionary = self.drink_dictionary
+        sentence = ''.join(sentence.decode('utf-8').split())
+        for temp in drink_dictionary:
+            if temp.decode('utf-8') in sentence:
+                return [temp]
+        return []
+
+
+    def drink_extract(self, words, postags, arcs):
+        """
+        It is used to generate the drink via syntax tree (by ATT in LTP)
+
+        Args:
+        -------------
+            words: word segmentation
+            postags: pos
+            arcs: syntax tree
+
+        Returns:
+        -------------
+            final_solution: A list contains strings. Each string is a kind of drink
+        """
+
+        drink_end = self.drink_end
+        drink_remove = self.drink_remove
+        drink_confuse = self.drink_confuse
+     
+        temp = []
+        solution = []
+        for i in range(len(arcs)):
+            if words[i] in drink_end or self.word_fix(words[i], drink_confuse) in drink_end:# comment if the phrase contains the word in drink_end, we decide it is a kind of drink
+                temp.append(i)
+                if i < len(arcs) -1 and words[i+1] in drink_end: # comment consider the case when the there is another word in drink_end after the current word
+                    continue
+                solution.append(temp)
+                temp = []
+            elif i < len(arcs) - 1 and words[i] in ['flat', 'Flat', 'FLAT'] and words[i+1] in ['white', 'White', 'WHITE']: # comment consider the case of Englist word in drink product
+                temp.append(i)
+                temp.append(i+1)
+                if i < len(arcs) - 2 and words[i+2] in drink_end:
+                    continue
+                solution.append(temp)
+                temp = []
+            elif arcs[i].relation == 'ATT' and postags[i] not in ['m', 'p', 'r', 'q', 'e', 'ws'] and words[i] not in drink_remove: # comment we use ATT to generate phrase
+                temp.append(i)
+            else:
+                temp = []
+
+        temp_solution = []
+        for temp in solution:
+            if len(temp_solution) >= 1 and (temp[0] - temp_solution[-1][-1] == 1):
+                last_temp = temp_solution.pop()
+                last_temp.extend(temp)
+                temp = last_temp
+            temp_solution.append(temp) 
+            
+        middle_solution = []
+        for temp in temp_solution: # comment consider the case when there are some word in drink_confuse in the either side of the phrase, we might need to remove them
+
+            while words[temp[0]].decode('utf-8')[0].encode('utf-8') in drink_confuse and words[temp[0]] not in drink_end:
+                if len(temp) >=2 and words[temp[0]] in ['热'] and words[temp[1]] in ['巧克力']:
+                    break
+                if words[temp[0]] in ['冰摇', '冰搖']: # we should keep it 
+                    break
+                words[temp[0]] = words[temp[0]].decode('utf-8')[1:].encode('utf-8')
+                if not words[temp[0]]:
+                    temp = temp[1:]
+
+            while words[temp[-1]].decode('utf-8')[-1].encode('utf-8') in drink_confuse and words[temp[-1]] not in drink_end:
+                words[temp[-1]] = words[temp[-1]].decode('utf-8')[:-1].encode('utf-8')
+                if not words[temp[-1]]:
+                    temp = temp[:-1]
+            if len(temp) == 1 and words[temp[0]] in ['咖啡']: # if the phrase is only 咖啡, we simply remove it
+                continue
+            middle_solution.append(''.join(words[i] for i in temp))
+
+       
+        if len(middle_solution) == 0:# if we fail to get the drink above, we use string match from drink_dictionary
+            middle_solution = self.drink_from_dictionary(self.sentence)
+
+        sentence_dict = dict()
+        sentence_count = 0
+        word_count = 0
+        for single_word in (self.sentence).decode('utf-8'):# comment it is used to keep the ' ' in the original sentence when we generate the drink. We use a dict to deal with it
+            if single_word in [' '.decode('utf-8'), '　'.decode('utf-8')]:
+                sentence_count += 1
+            else:
+                sentence_dict[word_count] = sentence_count
+                sentence_count += 1
+                word_count += 1
+
+        final_solution = []
+        sentence_continue = ''.join((self.sentence).decode('utf-8').split())
+        import re
+        for drink_result in middle_solution:
+            drink_result = drink_result.decode('utf-8')
+            match = re.search(drink_result, sentence_continue)
+            if not match: # comment sometimes the search might not work, e.g. '+' 
+                if drink_result in self.sentence.decode('utf-8'):
+                    final_solution.append(drink_result.encode('utf-8'))
+            else:
+                start = match.start()
+                length = len(drink_result)
+                final_solution.append(self.sentence.decode('utf-8')[sentence_dict[start]:sentence_dict[length+start-1]+1].encode('utf-8'))
+
+                      
+        return final_solution
+
+
+
 
 if __name__ == '__main__':
     from time import time
     start = time()
-    address_parser = AddressParser()
+    address_drink_parser = AddressDrinkParser()
 
     end = time()
 
-    sentence = '送到 深南 大道 101 号哈哈'
-    solution = address_parser(sentence)
+    sentence = '红 茶 拿 铁, 巧克 力 麦 芬 '
 
+    solution = address_drink_parser.get_drink(sentence)
     end1 = time()
     for temp in solution:
         print(temp)
       
+    sentence = '送到 深南 大道 101 号哈哈'
+
+    solution = address_drink_parser.get_address(sentence)
+    for temp in solution:
+        print(temp)
     print(end-start)
     print(end1-end)
 
