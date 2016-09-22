@@ -1,3 +1,5 @@
+Pay attention: Please add ner.model in ltp_models dir. I try to use to improve the performance. Though it has little effect.
+
 Please run "pip install -r requirements.txt"
 
 Please pay attention to "Byte Order Mark" problem of txt file(encoding problem for Chinese). Try use ":set bomb?" command in the vim to check if there is "BOM" in the top of the file. Please refer to http://huoding.com/2011/05/14/78 for the details
@@ -53,6 +55,13 @@ token_address_remove.txt
 -------------
     Words that are not address information but includes words in token_address_weak.txt
 
+token_address_exception.txt
+-------------
+    It is used to remove some bad cases. 
+    If the result that is bad, we can put them in token_address_exception.txt and we will remove them in the output. 
+    Beases, if the result is just one word listed in the 1st or 2nd line of token_address_weak.txt or token_address_remove.txt, we also remove them
+
+
 drink_end.txt
 -------------
     Words that the drink with ends with
@@ -76,6 +85,6 @@ exception.txt:
 
 ltp_models
 ---------------
-    The models trained by ltp. Please download them from https://pan.baidu.com/share/link?shareid=1988562907&uk=2738088569. In this ltp_models, please include cws.model, pos.model and parser.model
+    The models trained by ltp. Please download them from https://pan.baidu.com/share/link?shareid=1988562907&uk=2738088569. In this ltp_models, please include cws.model, pos.model and parser.model, ner.model
 
 
