@@ -14,6 +14,7 @@ class AddressDrinkParser(object):
         token2_address: A list. Used for store the words that suggests that the phrase contains address information strongly. Please refer to the second line of token_address.txt. It should be the subset of token2_adderess_weak
         token1_address_weak: A list. Used for store the words that suggests that the phrase contains address information weakly. Please refer to the first line of token_address_weak.txt
         token2_address_weak: A list. Used for store the words that suggests that the phrase contains address information weakly. Please refer to the second line of token_address_weak.txt
+        token3_address_weak: A list. Used for store the words that suggests that the phrase contains address information weakly. It can be some special word that can be address. Please refer to the third line of token_address_weak.txt
         token_address_remove: A list. To remove the word that is not address information but contains words in token_address_week. Please refer to the file toaken_address_remove.txt       
     """
 
