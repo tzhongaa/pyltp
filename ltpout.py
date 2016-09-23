@@ -260,7 +260,7 @@ class AddressDrinkParser(object):
                     solution.append(temp) # comment we append the address to the solution
 
           #      print solution
-            elif (arcs[i].relation == 'ATT' and postags[i] not in ['p', 'q' ,'r'] and words[i] not in ['大杯','超大杯','小杯', '中杯', '杯', '奶']) or postags[i] in ['ns', 'ni', 'nl']: # comment generate an phrase via "ATT" relation but modify a little bit
+            elif (arcs[i].relation == 'ATT' and postags[i] not in ['p', 'q' ,'r'] and words[i] not in ['大杯','超大杯','小杯', '中杯', '杯', '奶'] and words[i] not in self.drink_end) or postags[i] in ['ns', 'ni', 'nl']: # comment generate an phrase via "ATT" relation but modify a little bit
                 temp.append(i)
                 #print temp
             elif temp != [] and (words[i] in address or self.word_in(words[i],word_address)): # comment consider the words in token_address_weak
