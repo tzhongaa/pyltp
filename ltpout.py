@@ -385,10 +385,25 @@ class AddressDrinkParser(object):
                 temp_solution.append(temp)
         final_solution = temp_solution
 
-        for temp in ['我家', '家', '公司']:
-            if temp in self.sentence and temp not in final_solution:
-                final_solution.append(temp)
- 
+
+        flag1 = True
+        flag2 = True
+        flag3 = True
+        for temp in final_solution:
+            if flag1 and temp in ['我家']:
+                flag1 = False
+            if flag2 and temp in ['家']:
+                flag2 = False
+            if flag3 and temp in ['公司']:
+                flag3 = False
+
+        if flag1 and '我家' in self.sentence:
+            final_solution.append('我家') 
+        if flag2 and '家' in self.sentence:
+            final_solution.append('家') 
+        if flag3 and '公司' in self.sentence:
+            final_solution.append('公司')
+
 
                       
         return final_solution
