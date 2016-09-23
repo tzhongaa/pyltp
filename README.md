@@ -58,8 +58,6 @@ token_address_remove.txt
 token_address_exception.txt
 -------------
     It is used to remove some bad cases. 
-    If the result that is bad, we can put them in token_address_exception.txt and we will remove them in the output. 
-    Beases, if the result is just one word listed in the 1st or 2nd line of token_address_weak.txt or token_address_remove.txt, we also remove them
 
 
 drink_end.txt
