@@ -172,10 +172,10 @@ class AddressDrinkParser(object):
         arcs = parser.parse(words, postags)  # 句法分析
 #        print "\t".join("%d:%s" % (arc.head, arc.relation) for arc in arcs)
         #parser.release()  # 释放模型
- #       print [x.relation for x in arcs]
+#        print [x.relation for x in arcs]
         
         netags = self.recognizer.recognize(words, postags)  # 命名实体识别
- #       print '\t'.join(netags)
+#        print '\t'.join(netags)
         #recognizer.release()  # 释放模型
         self.netags = netags
 
@@ -254,7 +254,7 @@ class AddressDrinkParser(object):
             if (temp != [] and i == len(arcs)-1 and arcs[i].relation not in ['WP'] and (postags[i] not in ['v', 'r'] or words[i] in ['弄'])) or (i == len(arcs)-1 and postags[i] in ['ni', 'ns', 'nl']) or (i == len(arcs)-1 and self.word_in_first(words[i])): # comment consider the case when the word in the last word
                 temp.append(i)
                # print temp
-                while len(temp) >=1 and not (words[temp[-1]] in address or words[temp[-1]] in self.token3_address_weak or self.word_in(words[temp[-1]], word_address)) and postags[temp[-1]] not in ['j', 'm', 'nd', 'ni', 'nl', 'ns', 'nz', 'ws', 'i', 'q'] and not (postags[temp[-1]] in ['n'] and temp[0] >=2 and words[temp[0]-2] in ['送'] and words[temp[0]-1] in ['到', '至']) and not (postags[temp[-1]] in ['n'] and temp[0] >=2 and words[temp[0]-2] in ['地址', '住']) and not (postags[temp[-1]] in ['n'] and temp[0] >=1 and words[temp[0]-1] in ['住']): # comment we might remove the last words in the temp in some cases
+                while len(temp) >=1 and not (words[temp[-1]] in address or words[temp[-1]] in self.token3_address_weak or self.word_in(words[temp[-1]], word_address)) and postags[temp[-1]] not in ['m', 'nd', 'ni', 'nl', 'ns', 'ws'] and not (postags[temp[-1]] in ['n'] and temp[0] >=2 and words[temp[0]-2] in ['送'] and words[temp[0]-1] in ['到', '至']) and not (postags[temp[-1]] in ['n'] and temp[0] >=2 and words[temp[0]-2] in ['地址', '住']) and not (postags[temp[-1]] in ['n'] and temp[0] >=1 and words[temp[0]-1] in ['住']): # comment we might remove the last words in the temp in some cases
                     temp.pop()
                 if len(temp) >= 1:
                     solution.append(temp) # comment we append the address to the solution
@@ -267,11 +267,11 @@ class AddressDrinkParser(object):
                 temp.append(i)
             elif self.word_in_first(words[i]): # comment consider the case of the first word
                 temp.append(i)
-            elif temp != [] and postags[i] in ['m', 'ws']: # comment consider the case of number of foreign words like 'cyt'
+            elif temp != [] and postags[i] in ['m', 'ws'] and words[i] not in ['几']: # comment consider the case of number of foreign words like 'cyt'
                 temp.append(i)
             elif temp != []:   
                 #print temp
-                while len(temp) >=1 and not (words[temp[-1]] in address or words[temp[-1]] in self.token3_address_weak or self.word_in(words[temp[-1]], word_address)) and postags[temp[-1]] not in ['j', 'm', 'nd', 'ni', 'nl', 'ns', 'nz', 'ws', 'i', 'q'] and not (postags[temp[-1]] in ['n'] and temp[0] >=2 and words[temp[0]-2] in ['送'] and words[temp[0]-1] in ['到', '至']) and not (postags[temp[-1]] in ['n'] and temp[0] >=2 and words[temp[0]-2] in ['地址', '住']) and not (postags[temp[-1]] in ['n'] and temp[0] >=1 and words[temp[0]-1] in ['住']):# comment we might remove the last words in the temp in some cases
+                while len(temp) >=1 and not (words[temp[-1]] in address or words[temp[-1]] in self.token3_address_weak or self.word_in(words[temp[-1]], word_address)) and postags[temp[-1]] not in ['m', 'nd', 'ni', 'nl', 'ns',  'ws'] and not (postags[temp[-1]] in ['n'] and temp[0] >=2 and words[temp[0]-2] in ['送'] and words[temp[0]-1] in ['到', '至']) and not (postags[temp[-1]] in ['n'] and temp[0] >=2 and words[temp[0]-2] in ['地址', '住']) and not (postags[temp[-1]] in ['n'] and temp[0] >=1 and words[temp[0]-1] in ['住']):# comment we might remove the last words in the temp in some cases
                     temp.pop()
                 if len(temp) >= 1:
                     solution.append(temp)
@@ -305,7 +305,7 @@ class AddressDrinkParser(object):
         netags = self.netags
         for i in range(len(words)):
           #  print i
-            if netags[i] in ['S-Ni', 'B-Ni', 'I-Ni', 'E-Ni', 'S-Ns', 'B-Ns', 'I-Ns', 'E-Ns']:
+            if netags[i] in ['S-Ns', 'B-Ns', 'I-Ns', 'E-Ns']:
                 big_temp.append(i)
             elif temp_count < len(temp_solution) and i in temp_solution[temp_count]:
                 big_temp.append(i)
@@ -313,11 +313,15 @@ class AddressDrinkParser(object):
                 big_temp.append(i)
                 temp_count = temp_count + 1
             else:
+                if big_temp and words[big_temp[-1]] in ['小来']:
+                    big_temp.pop()
                 if big_temp:
                     middle_solution.append(''.join(words[i] for i in big_temp))
          #           middle_solution.append(big_temp)
                     big_temp = []
         
+        if big_temp and words[big_temp[-1]] in ['小来', '来也']:
+            big_temp.pop()
         if  big_temp:
            # middle_solution.append(big_temp)
             middle_solution.append(''.join(words[i] for i in big_temp))
@@ -358,9 +362,11 @@ class AddressDrinkParser(object):
                 final_solution.append(self.sentence.decode('utf-8')[sentence_dict[start]:sentence_dict[pattern_length+start-1]+1].encode('utf-8'))
         temp_solution = []
         for temp in final_solution:# comment remove some exception address
-            if temp in  self.token1_address_weak or temp in self.token2_address_weak or temp in self.token_address_remove or temp in self.token_address_exception:
+            if temp in  self.token1_address_weak or temp in self.token2_address_weak or temp in self.token_address_remove or temp in self.token_address_exception or len(temp.decode('utf-8')) <= 2:
                 pass
             else:
+                if len(temp.decode('utf-8')) >=2 and temp.decode('utf-8')[0].encode('utf-8') in ['嗯']:
+                    temp = temp.decode('utf-8')[1:].encode('utf-8')
                 temp_solution.append(temp)
         final_solution = temp_solution
  
@@ -545,7 +551,7 @@ if __name__ == '__main__':
         print(temp)
      
     sentence = ''
-    sentence = '朝 阳 区 大 屯 里 1 1 8号 A 座  车易拍\t改    删'
+    sentence = '星巴克当日咖啡 超大杯不加奶 '
     solution = address_drink_parser.get_address(sentence)
     for temp in solution:
         print(temp)
