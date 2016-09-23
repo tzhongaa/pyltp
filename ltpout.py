@@ -260,7 +260,7 @@ class AddressDrinkParser(object):
                     solution.append(temp) # comment we append the address to the solution
 
           #      print solution
-            elif (arcs[i].relation == 'ATT' and postags[i] not in ['p', 'q' ,'r'] and words[i] not in ['大杯','超大杯','小杯', '中杯', '杯']) or postags[i] in ['ns', 'ni', 'nl']: # comment generate an phrase via "ATT" relation but modify a little bit
+            elif (arcs[i].relation == 'ATT' and postags[i] not in ['p', 'q' ,'r'] and words[i] not in ['大杯','超大杯','小杯', '中杯', '杯', '奶']) or postags[i] in ['ns', 'ni', 'nl']: # comment generate an phrase via "ATT" relation but modify a little bit
                 temp.append(i)
                 #print temp
             elif temp != [] and (words[i] in address or self.word_in(words[i],word_address)): # comment consider the words in token_address_weak
@@ -315,10 +315,10 @@ class AddressDrinkParser(object):
                 if big_temp and words[big_temp[-1]] in ['小来', '来也']:
                     big_temp.pop()
                 while True:
-                    if big_temp and (words[big_temp[0]] in self.drink_end or words[big_temp[0]] in ['送到', '送至', '送往']): 
-                        big_temp = big_temp[1:]
-                    elif len(big_temp) >=2 and words[big_temp[0]] in ['送'] and words[big_temp[1]] in ['到', '至', '往']:
+                    if len(big_temp) >=2 and words[big_temp[0]] in ['送'] and words[big_temp[1]] in ['到', '至', '往']:
                         big_temp = big_temp[2:]
+                    elif big_temp and (words[big_temp[0]] in self.drink_end or words[big_temp[0]] in ['送到', '送至', '送往', '送']): 
+                        big_temp = big_temp[1:]
                     else:
                         break
                 if big_temp:
@@ -385,24 +385,6 @@ class AddressDrinkParser(object):
                 temp_solution.append(temp)
         final_solution = temp_solution
 
-
-        flag1 = True
-        flag2 = True
-        flag3 = True
-        for temp in final_solution:
-            if flag1 and temp in ['我家']:
-                flag1 = False
-            if flag2 and temp in ['家']:
-                flag2 = False
-            if flag3 and temp in ['公司']:
-                flag3 = False
-
-        if flag1 and '我家' in self.sentence:
-            final_solution.append('我家') 
-        if flag2 and '家' in self.sentence:
-            final_solution.append('家') 
-        if flag3 and '公司' in self.sentence:
-            final_solution.append('公司')
 
 
                       
@@ -586,7 +568,7 @@ if __name__ == '__main__':
         print(temp)
      
     sentence = ''
-    sentence = 'Boss, 您送往天津环球金融中心30层的咖啡订单（大杯美式（热）等）已生成，金额102.0元（最优优惠券已抵扣2.0元），请查看详情并支付，20分钟内未支付订单将自动取消：支付'
+    sentence = '满记 芒果西米露 满记 芒果白雪黑糯米 X 2 满记 蓝莓梦幻双皮奶 热焦糖咖啡拿铁 拿铁'
     solution = address_drink_parser.get_address(sentence)
     for temp in solution:
         print(temp)
